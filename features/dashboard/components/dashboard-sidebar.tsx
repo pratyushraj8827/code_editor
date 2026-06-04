@@ -20,6 +20,7 @@ import {
   Database,
   FlameIcon,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -36,14 +37,15 @@ import {
 } from "@/components/ui/sidebar"
 import Image from "next/image"
 
-// Interface definitions remain clean and identical
+// Define the interface for a single playground item, icon is now a string
 interface PlaygroundData {
   id: string
   name: string
-  icon: string 
+  icon: string // Changed to string
   starred: boolean
 }
 
+// Map icon names (strings) to their corresponding LucideIcon components
 const lucideIconMap: Record<string, LucideIcon> = {
   Zap: Zap,
   Lightbulb: Lightbulb,
@@ -51,13 +53,14 @@ const lucideIconMap: Record<string, LucideIcon> = {
   Compass: Compass,
   FlameIcon: FlameIcon,
   Terminal: Terminal,
-  Code2: Code2,
+  Code2: Code2, // Include the default icon
+  // Add any other icons you might use dynamically
 }
 
 export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundData: PlaygroundData[] }) {
   const pathname = usePathname()
-  const [starredPlaygrounds] = useState(initialPlaygroundData.filter((p) => p.starred))
-  const [recentPlaygrounds] = useState(initialPlaygroundData)
+  const [starredPlaygrounds, setStarredPlaygrounds] = useState(initialPlaygroundData.filter((p) => p.starred))
+  const [recentPlaygrounds, setRecentPlaygrounds] = useState(initialPlaygroundData)
 
   return (
     <Sidebar variant="inset" collapsible="icon" className="border-1 border-r">
@@ -65,31 +68,31 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
         <div className="flex items-center gap-2 px-4 py-3 justify-center">
           <Image src={"/logo.svg"} alt="logo" height={60} width={60} />
         </div>
+       
       </SidebarHeader>
-      
       <SidebarContent>
-        {/* Core Navigation Group */}
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              {/* 🌟 FIX 1: Swapped 'asChild' for 'render={<Link />}' */}
-              <SidebarMenuButton render={<Link href="/" />} isActive={pathname === "/"} tooltip="Home">
-                <Home className="h-4 w-4" />
-                <span>Home</span>
+              <SidebarMenuButton asChild isActive={pathname === "/"} tooltip="Home">
+                <Link href="/">
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
             <SidebarMenuItem>
-              {/* 🌟 FIX 2: Swapped 'asChild' for 'render={<Link />}' */}
-              <SidebarMenuButton render={<Link href="/dashboard" />} isActive={pathname === "/dashboard"} tooltip="Dashboard">
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Dashboard</span>
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard"} tooltip="Dashboard">
+                <Link href="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+          
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Starred Playgrounds Group */}
         <SidebarGroup>
           <SidebarGroupLabel>
             <Star className="h-4 w-4 mr-2" />
@@ -100,6 +103,7 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
+
               {starredPlaygrounds.length === 0 && recentPlaygrounds.length === 0 ? (
                 <div className="text-center text-muted-foreground py-4 w-full">Create your playground</div>
               ) : (
@@ -107,14 +111,15 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                   const IconComponent = lucideIconMap[playground.icon] || Code2;
                   return (
                     <SidebarMenuItem key={playground.id}>
-                      {/* 🌟 FIX 3: Dynamic Render Prop with leading slash active checks */}
                       <SidebarMenuButton
-                        render={<Link href={`/playground/${playground.id}`} />}
+                        asChild
                         isActive={pathname === `/playground/${playground.id}`}
                         tooltip={playground.name}
                       >
-                        {IconComponent && <IconComponent className="h-4 w-4" />}
-                        <span>{playground.name}</span>
+                        <Link href={`/playground/${playground.id}`}>
+                          {IconComponent && <IconComponent className="h-4 w-4" />}
+                          <span>{playground.name}</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -124,7 +129,6 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Playgrounds Group */}
         <SidebarGroup>
           <SidebarGroupLabel>
             <History className="h-4 w-4 mr-2" />
@@ -140,38 +144,39 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                   const IconComponent = lucideIconMap[playground.icon] || Code2;
                   return (
                     <SidebarMenuItem key={playground.id}>
-                      {/* 🌟 FIX 4: Clean dynamic render passing and path alignment */}
                       <SidebarMenuButton
-                        render={<Link href={`/playground/${playground.id}`} />}
-                        isActive={pathname === `/playground/${playground.id}`}
+                        asChild
+                        isActive={pathname === `playground/${playground.id}`}
                         tooltip={playground.name}
                       >
-                        {IconComponent && <IconComponent className="h-4 w-4" />}
-                        <span>{playground.name}</span>
+                        <Link href={`/playground/${playground.id}`}>
+                          {IconComponent && <IconComponent className="h-4 w-4" />}
+                          <span>{playground.name}</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
                 })
               )}
-              
               <SidebarMenuItem>
-                {/* 🌟 FIX 5: View all button conversion */}
-                <SidebarMenuButton render={<Link href="/playgrounds" />} tooltip="View all">
-                  <span className="text-sm text-muted-foreground">View all playgrounds</span>
+                <SidebarMenuButton asChild tooltip="View all">
+                  <Link href="/playgrounds">
+                    <span className="text-sm text-muted-foreground">View all playgrounds</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            {/* 🌟 FIX 6: Settings panel mapping conversion */}
-            <SidebarMenuButton render={<Link href="/settings" />} tooltip="Settings">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
+            <SidebarMenuButton asChild tooltip="Settings">
+              <Link href="/settings">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
