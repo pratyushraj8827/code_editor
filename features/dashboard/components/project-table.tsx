@@ -63,7 +63,7 @@ interface ProjectTableProps {
   ) => Promise<void>;
   onDeleteProject?: (id: string) => Promise<void>;
   onDuplicateProject?: (id: string) => Promise<void>;
-  
+
 }
 
 interface EditProjectData {
@@ -86,7 +86,7 @@ export default function ProjectTable({
     description: "",
   });
   const [isLoading, setIsLoading] = useState(false);
- 
+
 
   const handleEditClick = (project: Project) => {
     setSelectedProject(project);
@@ -121,7 +121,38 @@ export default function ProjectTable({
   };
 
   const handleMarkasFavorite = async (project: Project) => {
-    //    Write your logic here
+    setIsLoading(true);
+
+    const isCurrentlyStarred = project.Starmark?.[0]?.isMarked || false;
+    const nextStarredState = !isCurrentlyStarred;
+
+    try {
+      const response = await fetch(`/api/projects/${project.id}/favorite`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isMarked: nextStarredState }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status on server");
+      }
+
+      toast.success(
+        nextStarredState ? "Added to favorites" : "Removed from favorites"
+      );
+
+      // Note: If your state is managed server-side, you can tell Next.js 
+      // to re-fetch and update the data on the screen by calling:
+      // router.refresh();
+
+    } catch (error) {
+      toast.error("Failed to change favorite status");
+      console.error("Network error toggling favorite state:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteProject = async () => {
