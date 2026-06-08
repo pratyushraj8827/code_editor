@@ -3,118 +3,52 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 
 import authConfig from "./auth.config"
 import { db } from "./lib/db";
-import { getAccountByUserId, getUserById } from "./features/auth/actions";
+import { getAccountByUserId, getUserById } from "@/features/auth/actions";
 
-
- 
-
- 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db),
+  session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET,
+  ...authConfig,
+  
   callbacks: {
-    /**
-     * Handle user creation and account linking after a successful sign-in
-     */
+    // 1. SIGN IN CALLBACK
+    // The PrismaAdapter automatically creates the User and Account in MongoDB.
+    // We only need this callback if we want to block certain users from logging in.
     async signIn({ user, account, profile }) {
       if (!user || !account) return false;
-
-      // Check if the user already exists
-      const existingUser = await db.user.findUnique({
-        where: { email: user.email! },
-      });
-
-      // If user does not exist, create a new one
-      if (!existingUser) {
-        const newUser = await db.user.create({
-          data: {
-            email: user.email!,
-            name: user.name,
-            image: user.image,
-           
-            accounts: {
-              // @ts-ignore
-              create: {
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                refreshToken: account.refresh_token,
-                accessToken: account.access_token,
-                expiresAt: account.expires_at,
-                tokenType: account.token_type,
-                scope: account.scope,
-                idToken: account.id_token,
-                sessionState: account.session_state,
-              },
-            },
-          },
-        });
-
-        if (!newUser) return false; // Return false if user creation fails
-      } else {
-        // Link the account if user exists
-        const existingAccount = await db.account.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          },
-        });
-
-        // If the account does not exist, create it
-        if (!existingAccount) {
-          await db.account.create({
-            data: {
-              userId: existingUser.id,
-              type: account.type,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              refreshToken: account.refresh_token,
-              accessToken: account.access_token,
-              expiresAt: account.expires_at,
-              tokenType: account.token_type,
-              scope: account.scope,
-              idToken: account.id_token,
-              // @ts-ignore
-              sessionState: account.session_state,
-            },
-          });
-        }
-      }
-
-      return true;
+      
+      // Allow the sign-in to proceed. PrismaAdapter takes over from here!
+      return true; 
     },
 
-    async jwt({ token, user, account }) {
-      if(!token.sub) return token;
-      const existingUser = await getUserById(token.sub)
+    // 2. JWT CALLBACK
+    // This runs whenever a JSON Web Token is created or updated.
+    async jwt({ token }) {
+      if (!token.sub) return token;
+      
+      // Fetch the latest user data from the database
+      const existingUser = await getUserById(token.sub);
+      if (!existingUser) return token;
 
-      if(!existingUser) return token;
-
-      const exisitingAccount = await getAccountByUserId(existingUser.id);
-
+      // Pass database values to the token
       token.name = existingUser.name;
       token.email = existingUser.email;
-      token.role = existingUser.role;
+      token.role = existingUser.role; 
 
       return token;
     },
 
+    // 3. SESSION CALLBACK
+    // This runs whenever useSession() or auth() is called in your app.
     async session({ session, token }) {
-      // Attach the user ID from the token to the session
-    if(token.sub  && session.user){
-      session.user.id = token.sub
-    } 
+      // Attach the custom data from the JWT to the actual session object
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+        session.user.role = token.role;
+      } 
 
-    if(token.sub && session.user){
-      session.user.role = token.role
-    }
-
-    return session;
+      return session;
     },
   },
-  
-  secret: process.env.AUTH_SECRET,
-  adapter: PrismaAdapter(db),
-  session: { strategy: "jwt" },
-  ...authConfig,
 })

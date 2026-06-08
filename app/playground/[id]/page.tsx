@@ -228,8 +228,11 @@ const MainPlaygroundPage = () => {
           }
         }
 
-           const newTemplateData = await saveTemplateData(updatedTemplateData);
-        setTemplateData(newTemplateData || updatedTemplateData);
+           // 1. Tell the database to save the data (do NOT assign it to a variable)
+        await saveTemplateData(updatedTemplateData);
+
+        // 2. Safely tell TypeScript that our local data is a TemplateFolder, then set it
+        setTemplateData(updatedTemplateData as TemplateFolder);
 // Update open files
         const updatedOpenFiles = openFiles.map((f) =>
           f.id === targetFileId

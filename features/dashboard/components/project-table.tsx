@@ -60,10 +60,10 @@ interface ProjectTableProps {
   onUpdateProject?: (
     id: string,
     data: { title: string; description: string }
-  ) => Promise<void>;
-  onDeleteProject?: (id: string) => Promise<void>;
-  onDuplicateProject?: (id: string) => Promise<void>;
-
+  ) => Promise<any>;
+  onDeleteProject?: (id: string) => Promise<any>;
+  onDuplicateProject?: (id: string) => Promise<any>;
+//void -> any replace kiya gemini
 }
 
 interface EditProjectData {
